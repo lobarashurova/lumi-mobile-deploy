@@ -1,0 +1,20 @@
+name: Deploy to development
+
+on:
+  push:
+    branches:
+      - master
+
+defaults:
+  run:
+    working-directory: /home/tdepjpyk/lumi-mobile-backend
+
+jobs:
+  build:
+    name: Build and deploy
+    runs-on: self-hosted
+    steps:
+      - name: git pull
+        run: git pull
+      - name: restart container
+        run: docker compose up -d --build --force-recreate
