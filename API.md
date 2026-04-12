@@ -7,13 +7,11 @@ Reference for integrating the mobile app with the Lumi backend.
 | Environment | URL |
 |---|---|
 | Local | `http://localhost:3000` |
-| Production | `https://mobile-api-production.up.railway.app` *(TBD — not yet deployed on Railway; follows the sibling naming convention)* |
+| Production | `https://mobile-api-production-82c0.up.railway.app` |
 
-Sibling services already deployed on Railway (for reference):
+Sibling services on Railway (for reference):
 - adminka-backend → `https://adminka-api-production.up.railway.app`
 - b2b-backend → `https://b2b-api-production-b1f9.up.railway.app`
-
-Once the mobile backend is deployed (Railway service name `mobile-api`), update the Production row above with the exact URL Railway assigns.
 
 - No global route prefix — every path already includes `/api/...`.
 - Swagger docs: `GET /api/docs` (Basic Auth — user `admin`, pass `DOCS_PASSWORD`).
