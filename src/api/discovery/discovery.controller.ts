@@ -12,8 +12,35 @@ export class DiscoveryController {
 
   @Public()
   @Get('feed')
-  async feed() {
-    const data = await this.discoveryService.feed()
+  @ApiQuery({ name: 'lang', required: false })
+  @ApiQuery({ name: 'new_classes_page', required: false })
+  @ApiQuery({ name: 'new_classes_limit', required: false })
+  @ApiQuery({ name: 'category_page', required: false })
+  @ApiQuery({ name: 'category_limit', required: false })
+  @ApiQuery({ name: 'near_class_page', required: false })
+  @ApiQuery({ name: 'near_class_limit', required: false })
+  async feed(
+    @Query('lang') lang?: string,
+    @Query('new_classes_page') newClassesPage?: string,
+    @Query('new_classes_limit') newClassesLimit?: string,
+    @Query('category_page') categoryPage?: string,
+    @Query('category_limit') categoryLimit?: string,
+    @Query('near_class_page') nearClassPage?: string,
+    @Query('near_class_limit') nearClassLimit?: string,
+  ) {
+    const data = await this.discoveryService.feed({
+      lang,
+      newClassesPage: newClassesPage ? parseInt(newClassesPage, 10) : undefined,
+      newClassesLimit: newClassesLimit
+        ? parseInt(newClassesLimit, 10)
+        : undefined,
+      categoryPage: categoryPage ? parseInt(categoryPage, 10) : undefined,
+      categoryLimit: categoryLimit ? parseInt(categoryLimit, 10) : undefined,
+      nearClassPage: nearClassPage ? parseInt(nearClassPage, 10) : undefined,
+      nearClassLimit: nearClassLimit
+        ? parseInt(nearClassLimit, 10)
+        : undefined,
+    })
     return { data }
   }
 
@@ -24,12 +51,14 @@ export class DiscoveryController {
   @ApiQuery({ name: 'search', required: false })
   @ApiQuery({ name: 'branch_id', required: false })
   @ApiQuery({ name: 'category_id', required: false })
+  @ApiQuery({ name: 'lang', required: false })
   async explore(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
     @Query('search') search?: string,
     @Query('branch_id') branch_id?: string,
     @Query('category_id') category_id?: string,
+    @Query('lang') lang?: string,
   ) {
     return this.discoveryService.explore({
       page: page ? parseInt(page, 10) : undefined,
@@ -37,6 +66,7 @@ export class DiscoveryController {
       search,
       branch_id,
       category_id,
+      lang,
     })
   }
 }
