@@ -16,8 +16,11 @@ import { RolesGuard } from 'src/api/auth/role.guard'
 import { BannersModule } from './api/banners/banners.module'
 import { BranchesModule } from './api/branches/branches.module'
 import { CategoriesModule } from './api/categories/categories.module'
+import { ChildrenModule } from './api/children/children.module'
 import { ClassesModule } from './api/classes/classes.module'
+import { DiscoveryModule } from './api/discovery/discovery.module'
 import { ProfileModule } from './api/profile/profile.module'
+import { TariffsModule } from './api/tariffs/tariffs.module'
 import { UploadsModule } from './api/uploads/uploads.module'
 import configuration from './config'
 import { LoggerMiddleware } from './middlewares/request-logger'
@@ -57,8 +60,11 @@ import { SharedModule } from './shared/shared.module'
     BannersModule,
     BranchesModule,
     CategoriesModule,
+    ChildrenModule,
     ClassesModule,
+    DiscoveryModule,
     ProfileModule,
+    TariffsModule,
     UploadsModule,
   ],
   controllers: [],

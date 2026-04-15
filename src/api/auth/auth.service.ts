@@ -51,7 +51,7 @@ export class AuthService {
       this.logger.error(`Failed to send SMS to ${dto.phone}`, error as Error)
     }
 
-    return { message: 'OTP sent successfully', expires_in: 180 }
+    return { message: 'OTP sent successfully', expires_in: 180, code }
   }
 
   async verifyOtp(dto: VerifyOtpDTO) {

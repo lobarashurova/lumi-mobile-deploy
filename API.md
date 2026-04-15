@@ -349,6 +349,110 @@ Returns a single class object with the same populated shape as a list item.
 
 ---
 
+### Children — `/api/children` (auth required)
+
+Parent's children (profiles used for bookings/onboarding). `parent_id` is taken from the JWT.
+
+#### `GET /api/children?page=1&limit=50`
+Response `data`:
+```json
+{
+  "data": [
+    {
+      "_id": "…",
+      "name": "Ali",
+      "age": 5,
+      "gender": "male",
+      "avatar": "/uploads/…",
+      "parent_id": "…",
+      "created_at": "…",
+      "updated_at": "…"
+    }
+  ],
+  "total": 1,
+  "page": 1,
+  "limit": 50,
+  "pages": 1
+}
+```
+
+#### `GET /api/children/:id`
+Returns a single child object (must belong to the caller).
+
+#### `POST /api/children`
+Body:
+```json
+{ "name": "Ali", "age": 5, "gender": "male", "avatar": "/uploads/…" }
+```
+Returns the created child.
+
+#### `PATCH /api/children/:id`
+Body: any subset of create fields. Returns the updated child.
+
+#### `DELETE /api/children/:id`
+Soft-deletes. Response `data`:
+```json
+{ "message": "Child deleted successfully" }
+```
+
+---
+
+### Tariffs (Plans) — `/api/tariffs` (public)
+
+Subscription plans shown in place of a wallet. Multilingual `name`, `description`, and `features[]`.
+
+#### `GET /api/tariffs?page=1&limit=20`
+Response `data`:
+```json
+{
+  "data": [
+    {
+      "_id": "…",
+      "name": { "uz": "…", "ru": "…", "en": "…" },
+      "description": { "uz": "…", "ru": "…", "en": "…" },
+      "price": 199000,
+      "currency": "UZS",
+      "duration_days": 30,
+      "features": [
+        { "uz": "…", "ru": "…", "en": "…" }
+      ],
+      "is_active": true,
+      "order": 1,
+      "created_at": "…",
+      "updated_at": "…"
+    }
+  ],
+  "total": 3,
+  "page": 1,
+  "limit": 20,
+  "pages": 1
+}
+```
+
+#### `GET /api/tariffs/:id`
+Returns a single tariff.
+
+---
+
+### Discovery — `/api/discovery` (public)
+
+Aggregated content for the home feed and explore screen.
+
+#### `GET /api/discovery/feed`
+Response `data`:
+```json
+{
+  "banners": [ /* banner objects */ ],
+  "categories": [ /* category objects */ ],
+  "new_classes": [ /* class objects (populated) */ ]
+}
+```
+
+#### `GET /api/discovery/explore?page=1&limit=10&search=&branch_id=&category_id=`
+Paginated class search. Same response shape as `GET /api/classes`.
+
+---
+
 ### Uploads — `/api/uploads` (auth required)
 
 #### `POST /api/uploads`
