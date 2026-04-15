@@ -8,7 +8,10 @@ import {
 
 export type TariffDocument = HydratedDocument<Tariff>
 
-@Schema({ timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } })
+@Schema({
+  collection: 'premiumplans',
+  timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' },
+})
 export class Tariff {
   @Prop({ type: MultiLangTextSchema, required: true })
   name: MultiLangText
@@ -27,6 +30,9 @@ export class Tariff {
 
   @Prop({ type: [MultiLangTextSchema], default: [] })
   features: MultiLangText[]
+
+  @Prop()
+  activities_limit?: number
 
   @Prop({ default: true })
   is_active: boolean
