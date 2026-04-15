@@ -1,0 +1,37 @@
+services:
+  - type: web
+    name: lumi-mobile-backend
+    runtime: node
+    plan: free
+    region: frankfurt
+    branch: main
+    buildCommand: npm ci && npm run build
+    startCommand: npm run start:prod
+    healthCheckPath: /
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
+      - key: PORT
+        value: "10000"
+      - key: DATABASE_URI
+        sync: false
+      - key: DATABASE_NAME
+        sync: false
+      - key: DATABASE_USER
+        sync: false
+      - key: DATABASE_PASSWORD
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: DOCS_PASSWORD
+        sync: false
+      - key: SMS_URL
+        value: https://notify.eskiz.uz
+      - key: SMS_EMAIL
+        sync: false
+      - key: SMS_PASSWORD
+        sync: false
+      - key: SMS_FROM
+        value: "4546"
+      - key: SMS_CALLBACK_URL
+        sync: false
