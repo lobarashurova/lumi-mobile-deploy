@@ -18,10 +18,12 @@ function tr(field: any, lang: Lang): string {
 
 function assetUrl(path?: string): string | undefined {
   if (!path) return undefined
-  if (path.startsWith('http')) return path
+  const cleaned = path.replace(/\s+/g, '')
+  if (!cleaned) return undefined
+  if (cleaned.startsWith('http')) return cleaned
   const base =
     process.env.PUBLIC_BASE_URL || 'https://lumi-mobile-backend.onrender.com'
-  return `${base}${path.startsWith('/') ? '' : '/'}${path}`
+  return `${base}${cleaned.startsWith('/') ? '' : '/'}${cleaned}`
 }
 
 function mapBanner(doc: any, lang: Lang) {
