@@ -8,6 +8,6 @@ export class VerifyOtpDTO {
   phone: string
 
   @IsString()
-  @Length(6, 6, { message: 'OTP code must be 6 digits' })
+  @Length(4, 4, { message: 'OTP code must be 4 digits' })
   code: string
 }

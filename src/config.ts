@@ -11,9 +11,11 @@ export const validation_schema = Joi.object({
   DATABASE_PASSWORD: Joi.string().optional().allow(''),
   JWT_SECRET: Joi.string().required(),
   DOCS_PASSWORD: Joi.string().required(),
-  SMS_API_KEY: Joi.string().optional().allow(''),
-  SMS_API_SECRET: Joi.string().optional().allow(''),
-  SMS_API_URL: Joi.string().optional().allow(''),
+  SMS_URL: Joi.string().optional().allow('').default('https://notify.eskiz.uz'),
+  SMS_EMAIL: Joi.string().optional().allow(''),
+  SMS_PASSWORD: Joi.string().optional().allow(''),
+  SMS_FROM: Joi.string().optional().allow('').default('4546'),
+  SMS_CALLBACK_URL: Joi.string().optional().allow(''),
 })
 
 export const configuration = () => ({
@@ -28,9 +30,11 @@ export const configuration = () => ({
   jwt_secret: process.env.JWT_SECRET,
   docs_password: process.env.DOCS_PASSWORD,
   sms: {
-    api_key: process.env.SMS_API_KEY,
-    api_secret: process.env.SMS_API_SECRET,
-    api_url: process.env.SMS_API_URL,
+    url: process.env.SMS_URL,
+    email: process.env.SMS_EMAIL,
+    password: process.env.SMS_PASSWORD,
+    from: process.env.SMS_FROM,
+    callback_url: process.env.SMS_CALLBACK_URL,
   },
 })
 

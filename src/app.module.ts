@@ -14,10 +14,14 @@ import { AuthModule } from 'src/api/auth/auth.module'
 import { RolesGuard } from 'src/api/auth/role.guard'
 
 import { BannersModule } from './api/banners/banners.module'
+import { BranchesModule } from './api/branches/branches.module'
+import { CategoriesModule } from './api/categories/categories.module'
+import { ClassesModule } from './api/classes/classes.module'
 import { ProfileModule } from './api/profile/profile.module'
 import { UploadsModule } from './api/uploads/uploads.module'
 import configuration from './config'
 import { LoggerMiddleware } from './middlewares/request-logger'
+import { SmsModule } from './services/sms/sms.module'
 import { SharedModule } from './shared/shared.module'
 
 @Module({
@@ -48,8 +52,12 @@ import { SharedModule } from './shared/shared.module'
       },
     ]),
     AuthModule,
+    SmsModule,
     SharedModule,
     BannersModule,
+    BranchesModule,
+    CategoriesModule,
+    ClassesModule,
     ProfileModule,
     UploadsModule,
   ],

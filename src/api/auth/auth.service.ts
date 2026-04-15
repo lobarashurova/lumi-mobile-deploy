@@ -10,6 +10,7 @@ import { Model, Types } from 'mongoose'
 
 import { Otp } from 'src/models/otp.schema'
 import { User } from 'src/models/user.schema'
+import { SmsService } from 'src/services/sms/sms.service'
 
 import { RegisterDTO } from './dto/register.dto'
 import { SendOtpDTO } from './dto/send-otp.dto'
@@ -24,10 +25,11 @@ export class AuthService {
     @InjectModel(Otp.name) private readonly otpModel: Model<Otp>,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
+    private readonly smsService: SmsService,
   ) {}
 
   async sendOtp(dto: SendOtpDTO) {
-    const code = Math.floor(100000 + Math.random() * 900000).toString()
+    const code = Math.floor(1000 + Math.random() * 9000).toString()
     const expires_at = new Date(Date.now() + 3 * 60 * 1000) // 3 minutes
 
     await this.otpModel.updateMany(
@@ -41,21 +43,12 @@ export class AuthService {
       expires_at,
     })
 
-    const sms_url = this.configService.get<string>('sms.api_url')
-    const sms_key = this.configService.get<string>('sms.api_key')
+    const message = `Tasdiqlash kodi Lumi Pass (lumipass.uz) ilovasiga kirish uchun: ${code} | Kod podtverjdeniya dlya vhoda v prilojenie Lumi Pass (lumipass.uz): ${code}`
 
-    if (sms_url && sms_key) {
-      try {
-        const sms_secret = this.configService.get<string>('sms.api_secret')
-        // TODO: integrate with actual SMS provider
-        this.logger.log(
-          `SMS OTP sent to ${dto.phone}: ${code} (via ${sms_url})`,
-        )
-      } catch (error) {
-        this.logger.error(`Failed to send SMS to ${dto.phone}`, error)
-      }
-    } else {
-      this.logger.log(`OTP for ${dto.phone}: ${code} (SMS not configured)`)
+    try {
+      await this.smsService.sendMessage(dto.phone, message)
+    } catch (error) {
+      this.logger.error(`Failed to send SMS to ${dto.phone}`, error as Error)
     }
 
     return { message: 'OTP sent successfully', expires_in: 180 }
