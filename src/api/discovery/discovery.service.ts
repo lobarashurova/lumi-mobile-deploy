@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common'
 
 import { BannersService } from 'src/api/banners/banners.service'
+import { BranchesService } from 'src/api/branches/branches.service'
 import { CategoriesService } from 'src/api/categories/categories.service'
 import { ClassesService } from 'src/api/classes/classes.service'
 
@@ -101,6 +102,7 @@ function mapClass(doc: any, lang: Lang) {
 export class DiscoveryService {
   constructor(
     private readonly bannersService: BannersService,
+    private readonly branchesService: BranchesService,
     private readonly categoriesService: CategoriesService,
     private readonly classesService: ClassesService,
   ) {}
@@ -165,6 +167,36 @@ export class DiscoveryService {
     return {
       ...result,
       data: result.data.map((d) => mapClass(d, lang)),
+    }
+  }
+
+  async classes(query: {
+    page?: number
+    limit?: number
+    search?: string
+    branch_id?: string
+    category_id?: string
+    lang?: string
+  }) {
+    const lang = pickLang(query.lang)
+    const result = await this.classesService.findAll(query)
+    return {
+      ...result,
+      data: result.data.map((d) => mapClass(d, lang)),
+    }
+  }
+
+  async branches(query: {
+    page?: number
+    limit?: number
+    search?: string
+    lang?: string
+  }) {
+    const lang = pickLang(query.lang)
+    const result = await this.branchesService.findAll(query)
+    return {
+      ...result,
+      data: result.data.map((d) => mapBranch(d, lang)),
     }
   }
 }
