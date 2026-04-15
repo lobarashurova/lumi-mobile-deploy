@@ -7,9 +7,9 @@ Reference for integrating the mobile app with the Lumi backend.
 | Environment | URL |
 |---|---|
 | Local | `http://localhost:3000` |
-| Production | `https://mobile-api-production-82c0.up.railway.app` |
+| Production | `https://lumi-mobile-backend.onrender.com` |
 
-Sibling services on Railway (for reference):
+Sibling services (for reference):
 - adminka-backend → `https://adminka-api-production.up.railway.app`
 - b2b-backend → `https://b2b-api-production-b1f9.up.railway.app`
 
