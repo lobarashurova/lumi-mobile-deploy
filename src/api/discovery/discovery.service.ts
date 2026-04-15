@@ -21,8 +21,21 @@ export class DiscoveryService {
 
     return {
       banners: banners.data,
-      categories: categories.data,
-      new_classes: newClasses.data,
+      categories: {
+        page: categories.page,
+        limit: categories.limit,
+        data: categories.data,
+      },
+      new_classes: {
+        page: newClasses.page,
+        limit: newClasses.limit,
+        data: newClasses.data,
+      },
+      near_classes: {
+        page: newClasses.page,
+        limit: newClasses.limit,
+        data: newClasses.data,
+      },
     }
   }
 

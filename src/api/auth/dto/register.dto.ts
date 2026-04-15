@@ -1,4 +1,4 @@
-import { IsString, Matches, MinLength } from 'class-validator'
+import { IsOptional, IsString, Matches, MinLength } from 'class-validator'
 
 export class RegisterDTO {
   @IsString()
@@ -11,7 +11,7 @@ export class RegisterDTO {
   @MinLength(2)
   first_name: string
 
+  @IsOptional()
   @IsString()
-  @MinLength(2)
-  last_name: string
+  last_name?: string
 }
