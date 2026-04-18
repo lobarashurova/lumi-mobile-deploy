@@ -22,6 +22,7 @@ import { DiscoveryModule } from './api/discovery/discovery.module'
 import { ProfileModule } from './api/profile/profile.module'
 import { TariffsModule } from './api/tariffs/tariffs.module'
 import { UploadsModule } from './api/uploads/uploads.module'
+import { UsersModule } from './api/users/users.module'
 import configuration from './config'
 import { LoggerMiddleware } from './middlewares/request-logger'
 import { SmsModule } from './services/sms/sms.module'
@@ -66,6 +67,7 @@ import { SharedModule } from './shared/shared.module'
     ProfileModule,
     TariffsModule,
     UploadsModule,
+    UsersModule,
   ],
   controllers: [],
   providers: [

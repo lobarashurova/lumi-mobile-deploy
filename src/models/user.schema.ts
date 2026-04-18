@@ -22,6 +22,12 @@ export class User {
   @Prop()
   avatar?: string
 
+  @Prop()
+  city?: string
+
+  @Prop()
+  district?: string
+
   @Prop({ default: false })
   is_deleted?: boolean
 
