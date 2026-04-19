@@ -17,6 +17,7 @@ import { BannersModule } from './api/banners/banners.module'
 import { BranchesModule } from './api/branches/branches.module'
 import { CategoriesModule } from './api/categories/categories.module'
 import { ChildrenModule } from './api/children/children.module'
+import { AdminSeedModule } from './api/admin-seed/admin-seed.module'
 import { ClassesModule } from './api/classes/classes.module'
 import { DiscoveryModule } from './api/discovery/discovery.module'
 import { OrdersModule } from './api/orders/orders.module'
@@ -62,6 +63,7 @@ import { SharedModule } from './shared/shared.module'
     SmsModule,
     PaycomModule,
     SharedModule,
+    AdminSeedModule,
     BannersModule,
     BranchesModule,
     CategoriesModule,

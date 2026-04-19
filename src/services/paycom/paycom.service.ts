@@ -13,6 +13,10 @@ export class PaycomService {
     return this.config.get<string>('paycom.api_key') || ''
   }
 
+  get testApiKey(): string {
+    return this.config.get<string>('paycom.test_api_key') || ''
+  }
+
   get username(): string {
     return this.config.get<string>('paycom.username') || 'Paycom'
   }
@@ -66,6 +70,9 @@ export class PaycomService {
     if (scheme !== 'Basic' || !value) return false
     const decoded = Buffer.from(value, 'base64').toString('utf8')
     const [user, pass] = decoded.split(':')
-    return user === this.username && pass === this.apiKey
+    if (user !== this.username) return false
+    if (pass === this.apiKey && this.apiKey) return true
+    if (pass === this.testApiKey && this.testApiKey) return true
+    return false
   }
 }

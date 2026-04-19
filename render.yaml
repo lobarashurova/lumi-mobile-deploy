@@ -41,6 +41,8 @@ services:
         sync: false
       - key: PAYCOM_API_KEY
         sync: false
+      - key: PAYCOM_TEST_API_KEY
+        sync: false
       - key: PAYCOM_CHECKOUT_URL
         value: https://checkout.paycom.uz
       - key: PAYCOM_CHECKOUT_REDIRECT_URL
