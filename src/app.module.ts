@@ -25,6 +25,7 @@ import { PaycomApiModule } from './api/paycom/paycom.module'
 import { ProfileModule } from './api/profile/profile.module'
 import { SchedulesModule } from './api/schedules/schedules.module'
 import { TariffsModule } from './api/tariffs/tariffs.module'
+import { TransactionsModule } from './api/transactions/transactions.module'
 import { UploadsModule } from './api/uploads/uploads.module'
 import { UsersModule } from './api/users/users.module'
 import configuration from './config'
@@ -76,6 +77,7 @@ import { SharedModule } from './shared/shared.module'
     ProfileModule,
     SchedulesModule,
     TariffsModule,
+    TransactionsModule,
     UploadsModule,
     UsersModule,
   ],
