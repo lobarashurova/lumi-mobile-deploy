@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common'
+import { Injectable, Logger } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
 import { Model, Types } from 'mongoose'
 
@@ -18,6 +18,8 @@ const TRANSACTION_TIMEOUT_MS = 12 * 60 * 60 * 1000
 
 @Injectable()
 export class PaycomMerchantService {
+  private readonly logger = new Logger('PaycomMerchantService')
+
   constructor(
     @InjectModel(Order.name) private readonly orderModel: Model<Order>,
     @InjectModel(Booking.name) private readonly bookingModel: Model<Booking>,
@@ -28,8 +30,21 @@ export class PaycomMerchantService {
   }
 
   private async loadOrder(orderId?: string) {
-    if (!orderId || !Types.ObjectId.isValid(orderId)) return null
-    return this.orderModel.findById(orderId)
+    if (!orderId) {
+      this.logger.warn('loadOrder: missing order_id in account')
+      return null
+    }
+    if (!Types.ObjectId.isValid(orderId)) {
+      this.logger.warn(`loadOrder: invalid ObjectId format "${orderId}"`)
+      return null
+    }
+    const order = await this.orderModel.findById(orderId)
+    if (!order) {
+      this.logger.warn(
+        `loadOrder: no order with _id=${orderId} in collection "${this.orderModel.collection.collectionName}" db="${this.orderModel.db.name}"`,
+      )
+    }
+    return order
   }
 
   async checkPerformTransaction(params: any) {

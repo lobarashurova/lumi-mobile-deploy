@@ -1,4 +1,4 @@
-import { Body, Controller, Headers, Post } from '@nestjs/common'
+import { Body, Controller, Headers, Logger, Post } from '@nestjs/common'
 import { ApiTags } from '@nestjs/swagger'
 
 import { Public } from 'src/common/decarators/public.decarator'
@@ -10,6 +10,8 @@ import { PaycomMerchantService } from './paycom.service'
 @ApiTags('Paycom')
 @Controller('/api/paycom')
 export class PaycomController {
+  private readonly logger = new Logger('PaycomMerchant')
+
   constructor(
     private readonly merchant: PaycomMerchantService,
     private readonly paycom: PaycomService,
@@ -22,7 +24,16 @@ export class PaycomController {
     @Body() body: any,
   ) {
     const id = body?.id ?? null
+    const method = body?.method ?? '<missing>'
+
+    this.logger.log(
+      `→ ${method} params=${JSON.stringify(body?.params ?? {})}`,
+    )
+
     if (!this.paycom.verifyAuth(authorization)) {
+      this.logger.warn(
+        `AUTH FAILED for ${method} — check PAYCOM_API_KEY / PAYCOM_TEST_API_KEY env vars`,
+      )
       return { jsonrpc: '2.0', id, error: PAYCOM_ERRORS.AUTH }
     }
     if (!body?.method) {
@@ -51,6 +62,14 @@ export class PaycomController {
         break
       default:
         outcome = { error: PAYCOM_ERRORS.METHOD }
+    }
+
+    if (outcome.error) {
+      this.logger.warn(
+        `← ${method} error code=${outcome.error.code} data=${outcome.error.data ?? ''}`,
+      )
+    } else {
+      this.logger.log(`← ${method} ok=${JSON.stringify(outcome.result)}`)
     }
 
     return { jsonrpc: '2.0', id, ...outcome }
