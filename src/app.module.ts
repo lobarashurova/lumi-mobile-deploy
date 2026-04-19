@@ -19,12 +19,15 @@ import { CategoriesModule } from './api/categories/categories.module'
 import { ChildrenModule } from './api/children/children.module'
 import { ClassesModule } from './api/classes/classes.module'
 import { DiscoveryModule } from './api/discovery/discovery.module'
+import { OrdersModule } from './api/orders/orders.module'
+import { PaycomApiModule } from './api/paycom/paycom.module'
 import { ProfileModule } from './api/profile/profile.module'
 import { TariffsModule } from './api/tariffs/tariffs.module'
 import { UploadsModule } from './api/uploads/uploads.module'
 import { UsersModule } from './api/users/users.module'
 import configuration from './config'
 import { LoggerMiddleware } from './middlewares/request-logger'
+import { PaycomModule } from './services/paycom/paycom.module'
 import { SmsModule } from './services/sms/sms.module'
 import { SharedModule } from './shared/shared.module'
 
@@ -57,6 +60,7 @@ import { SharedModule } from './shared/shared.module'
     ]),
     AuthModule,
     SmsModule,
+    PaycomModule,
     SharedModule,
     BannersModule,
     BranchesModule,
@@ -64,6 +68,8 @@ import { SharedModule } from './shared/shared.module'
     ChildrenModule,
     ClassesModule,
     DiscoveryModule,
+    OrdersModule,
+    PaycomApiModule,
     ProfileModule,
     TariffsModule,
     UploadsModule,

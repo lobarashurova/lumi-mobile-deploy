@@ -35,3 +35,13 @@ services:
         value: "4546"
       - key: SMS_CALLBACK_URL
         sync: false
+      - key: PAYCOM_USERNAME_ID
+        value: Paycom
+      - key: PAYCOM_MERCHANT_ID
+        sync: false
+      - key: PAYCOM_API_KEY
+        sync: false
+      - key: PAYCOM_CHECKOUT_URL
+        value: https://checkout.paycom.uz
+      - key: PAYCOM_CHECKOUT_REDIRECT_URL
+        sync: false

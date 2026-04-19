@@ -80,6 +80,16 @@ function mapClass(doc: any, lang: Lang) {
   const image =
     doc.image || (Array.isArray(doc.images) ? doc.images[0] : undefined)
 
+  const summary = Array.isArray(doc.prices_summary)
+    ? doc.prices_summary
+    : doc.has_age_pricing && Array.isArray(doc.age_price_ranges)
+      ? doc.age_price_ranges
+      : [{ age_from: doc.age_from, age_to: doc.age_to, price: doc.price }]
+  const sortedSummary = [...summary].sort((a, b) => (a.price ?? 0) - (b.price ?? 0))
+  const priceMin = doc.price_min ?? sortedSummary[0]?.price ?? doc.price ?? 0
+  const priceMax = doc.price_max ?? sortedSummary[sortedSummary.length - 1]?.price ?? doc.price ?? 0
+  const hasMultiple = doc.has_multiple_prices ?? sortedSummary.length > 1
+
   return {
     id: String(doc._id),
     branch,
@@ -87,12 +97,18 @@ function mapClass(doc: any, lang: Lang) {
     title: tr(doc.name, lang),
     description: tr(doc.description, lang),
     price: doc.price ?? 0,
+    price_min: priceMin,
+    price_max: priceMax,
+    has_multiple_prices: hasMultiple,
+    prices_summary: sortedSummary,
     min_age: doc.age_from,
     max_age: doc.age_to,
     gender: doc.gender,
     is_active: doc.status === 'approved',
     has_photo: !!image,
     image: assetUrl(image),
+    video_url: doc.video_url || doc.youtube_link || doc.vimeo_link || null,
+    video_provider: doc.video_provider || (doc.youtube_link ? 'youtube' : doc.vimeo_link ? 'vimeo' : null),
     created_at: doc.created_at,
     updated_at: doc.updated_at,
   }

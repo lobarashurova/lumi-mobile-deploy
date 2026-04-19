@@ -4,6 +4,9 @@ import { Model, Types } from 'mongoose'
 
 import { Activity } from 'src/models/activity.schema'
 
+type PriceRange = { age_from: number; age_to: number; price: number }
+type EnrichedActivity = Record<string, any>
+
 @Injectable()
 export class ClassesService {
   constructor(
@@ -48,7 +51,13 @@ export class ClassesService {
       this.activityModel.countDocuments(filter),
     ])
 
-    return { data, total, page, limit, pages: Math.ceil(total / limit) }
+    return {
+      data: data.map((d) => this.enrich(d)),
+      total,
+      page,
+      limit,
+      pages: Math.ceil(total / limit),
+    }
   }
 
   async findOne(id: string) {
@@ -57,6 +66,57 @@ export class ClassesService {
       .populate('branch_id')
       .populate('category_id')
     if (!activity) throw new NotFoundException('Class not found')
-    return activity
+    return this.enrich(activity)
+  }
+
+  private enrich(doc: any): EnrichedActivity {
+    const json = doc.toObject ? doc.toObject() : doc
+    const ranges = this.collectRanges(json)
+    const sorted = [...ranges].sort((a, b) => a.price - b.price)
+
+    json.prices_summary = sorted
+    json.price_min = sorted.length ? sorted[0].price : json.price ?? 0
+    json.price_max = sorted.length
+      ? sorted[sorted.length - 1].price
+      : json.price ?? 0
+    json.has_multiple_prices = sorted.length > 1
+    json.video_url = this.normalizeVideoUrl(json)
+    json.video_provider = this.detectVideoProvider(json)
+    return json
+  }
+
+  private collectRanges(activity: any): PriceRange[] {
+    if (
+      activity.has_age_pricing &&
+      Array.isArray(activity.age_price_ranges) &&
+      activity.age_price_ranges.length > 0
+    ) {
+      return activity.age_price_ranges.map((r: any) => ({
+        age_from: r.age_from,
+        age_to: r.age_to,
+        price: r.price,
+      }))
+    }
+    return [
+      {
+        age_from: activity.age_from,
+        age_to: activity.age_to,
+        price: activity.price,
+      },
+    ]
+  }
+
+  private normalizeVideoUrl(activity: any): string | null {
+    if (activity.youtube_link) return activity.youtube_link
+    if (activity.vimeo_link) return activity.vimeo_link
+    return null
+  }
+
+  private detectVideoProvider(
+    activity: any,
+  ): 'youtube' | 'vimeo' | null {
+    if (activity.youtube_link) return 'youtube'
+    if (activity.vimeo_link) return 'vimeo'
+    return null
   }
 }

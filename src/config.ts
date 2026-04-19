@@ -16,6 +16,11 @@ export const validation_schema = Joi.object({
   SMS_PASSWORD: Joi.string().optional().allow(''),
   SMS_FROM: Joi.string().optional().allow('').default('4546'),
   SMS_CALLBACK_URL: Joi.string().optional().allow(''),
+  PAYCOM_USERNAME_ID: Joi.string().optional().allow('').default('Paycom'),
+  PAYCOM_MERCHANT_ID: Joi.string().optional().allow(''),
+  PAYCOM_API_KEY: Joi.string().optional().allow(''),
+  PAYCOM_CHECKOUT_URL: Joi.string().optional().allow('').default('https://checkout.paycom.uz'),
+  PAYCOM_CHECKOUT_REDIRECT_URL: Joi.string().optional().allow(''),
 })
 
 export const configuration = () => ({
@@ -35,6 +40,13 @@ export const configuration = () => ({
     password: process.env.SMS_PASSWORD,
     from: process.env.SMS_FROM,
     callback_url: process.env.SMS_CALLBACK_URL,
+  },
+  paycom: {
+    username: process.env.PAYCOM_USERNAME_ID || 'Paycom',
+    merchant_id: process.env.PAYCOM_MERCHANT_ID,
+    api_key: process.env.PAYCOM_API_KEY,
+    checkout_url: process.env.PAYCOM_CHECKOUT_URL || 'https://checkout.paycom.uz',
+    redirect_url: process.env.PAYCOM_CHECKOUT_REDIRECT_URL,
   },
 })
 
