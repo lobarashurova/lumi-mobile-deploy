@@ -23,6 +23,7 @@ import { DiscoveryModule } from './api/discovery/discovery.module'
 import { OrdersModule } from './api/orders/orders.module'
 import { PaycomApiModule } from './api/paycom/paycom.module'
 import { ProfileModule } from './api/profile/profile.module'
+import { SchedulesModule } from './api/schedules/schedules.module'
 import { TariffsModule } from './api/tariffs/tariffs.module'
 import { UploadsModule } from './api/uploads/uploads.module'
 import { UsersModule } from './api/users/users.module'
@@ -73,6 +74,7 @@ import { SharedModule } from './shared/shared.module'
     OrdersModule,
     PaycomApiModule,
     ProfileModule,
+    SchedulesModule,
     TariffsModule,
     UploadsModule,
     UsersModule,
