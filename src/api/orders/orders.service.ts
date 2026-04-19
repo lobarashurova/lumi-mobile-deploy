@@ -1,7 +1,9 @@
 import {
   BadRequestException,
   Injectable,
+  Logger,
   NotFoundException,
+  OnModuleInit,
 } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
 import { Model, Types } from 'mongoose'
@@ -19,7 +21,9 @@ import { PaycomService } from 'src/services/paycom/paycom.service'
 import { CheckoutDTO, CheckoutItemDTO } from './dto/checkout.dto'
 
 @Injectable()
-export class OrdersService {
+export class OrdersService implements OnModuleInit {
+  private readonly logger = new Logger('OrdersService')
+
   constructor(
     @InjectModel(Order.name) private readonly orderModel: Model<Order>,
     @InjectModel(Booking.name) private readonly bookingModel: Model<Booking>,
@@ -28,6 +32,36 @@ export class OrdersService {
     private readonly ticketCounterModel: Model<TicketCounter>,
     private readonly paycom: PaycomService,
   ) {}
+
+  /**
+   * Drop the pre-partial `ticket_date_1_ticket_no_1` unique index if it's
+   * still lingering from an older deploy where ticket_no was required. The
+   * new schema definition uses a partialFilterExpression; Mongoose's
+   * auto-index will recreate it correctly once the old one is gone.
+   */
+  async onModuleInit() {
+    try {
+      const indexes = await this.bookingModel.collection.indexes()
+      const legacy = indexes.find(
+        (i) =>
+          i.name === 'ticket_date_1_ticket_no_1' &&
+          !('partialFilterExpression' in (i as any)),
+      )
+      if (legacy) {
+        await this.bookingModel.collection.dropIndex(
+          'ticket_date_1_ticket_no_1',
+        )
+        this.logger.log(
+          'Dropped legacy non-partial ticket_date_1_ticket_no_1 index',
+        )
+      }
+      await this.bookingModel.syncIndexes()
+    } catch (err) {
+      this.logger.warn(
+        `Booking index reconciliation failed: ${(err as Error).message}`,
+      )
+    }
+  }
 
   private todayKey(): string {
     return new Date().toISOString().slice(0, 10)

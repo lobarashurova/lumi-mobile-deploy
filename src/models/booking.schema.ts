@@ -48,4 +48,13 @@ export const BookingSchema = SchemaFactory.createForClass(Booking)
 BookingSchema.index({ order_id: 1 })
 BookingSchema.index({ user_id: 1, created_at: -1 })
 BookingSchema.index({ activity_id: 1 })
-BookingSchema.index({ ticket_date: 1, ticket_no: 1 }, { unique: true })
+// Partial uniqueness: only enforced for bookings that actually carry a
+// ticket_no (i.e. confirmed/paid). Pending bookings have ticket_no unset
+// and must not collide on (ticket_date, null).
+BookingSchema.index(
+  { ticket_date: 1, ticket_no: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { ticket_no: { $exists: true, $type: 'string' } },
+  },
+)
