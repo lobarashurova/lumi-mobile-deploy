@@ -33,8 +33,10 @@ export class OrdersService {
     return new Date().toISOString().slice(0, 10)
   }
 
-  private async reserveTicketNumbers(count: number): Promise<string[]> {
-    const date = this.todayKey()
+  private async reserveTicketNumbers(
+    count: number,
+    date: string,
+  ): Promise<string[]> {
     const counter = await this.ticketCounterModel.findOneAndUpdate(
       { date },
       { $inc: { last_no: count } },
@@ -50,6 +52,64 @@ export class OrdersService {
     return numbers
   }
 
+  /**
+   * Validates a user-picked `ticket_date` against an activity's recurring
+   * schedule. Throws BadRequest on invalid format, past date, or weekday
+   * that the class doesn't run on. Returns the chosen date and (if present)
+   * the matching schedule slot's start/end times.
+   */
+  private validateTicketDate(
+    activity: any,
+    ticketDate: string,
+  ): { date: string; slot?: { day: string; start_time: string; end_time: string } } {
+    // Match DTO already enforces format, but be defensive in case this is
+    // called from a different caller in the future.
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(ticketDate)) {
+      throw new BadRequestException('Invalid ticket_date format (YYYY-MM-DD)')
+    }
+    const picked = new Date(`${ticketDate}T00:00:00Z`)
+    if (Number.isNaN(picked.getTime())) {
+      throw new BadRequestException('Invalid ticket_date')
+    }
+    const today = new Date(`${this.todayKey()}T00:00:00Z`)
+    if (picked.getTime() < today.getTime()) {
+      throw new BadRequestException('ticket_date must be today or in the future')
+    }
+
+    const schedule = (activity.schedule ?? []) as Array<{
+      day: string
+      start_time: string
+      end_time: string
+    }>
+    if (schedule.length === 0) {
+      // Class has no weekly schedule — accept any future date.
+      return { date: ticketDate }
+    }
+
+    const pickedKey = this.weekdayKey(picked.getUTCDay())
+    const slot = schedule.find(
+      (s) => this.normalizeDay(s.day) === pickedKey,
+    )
+    if (!slot) {
+      const allowed = Array.from(
+        new Set(schedule.map((s) => this.normalizeDay(s.day))),
+      ).join(', ')
+      throw new BadRequestException(
+        `Class doesn't run on ${pickedKey}. Available: ${allowed}`,
+      )
+    }
+    return { date: ticketDate, slot }
+  }
+
+  private weekdayKey(utcDay: number): string {
+    // 0 = Sunday ... 6 = Saturday
+    return ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'][utcDay]
+  }
+
+  private normalizeDay(day: string): string {
+    return (day || '').trim().toUpperCase().slice(0, 3)
+  }
+
   async checkout(userId: string, dto: CheckoutDTO) {
     if (!Types.ObjectId.isValid(dto.activity_id)) {
       throw new BadRequestException('Invalid activity_id')
@@ -61,6 +121,11 @@ export class OrdersService {
       status: 'approved',
     })
     if (!activity) throw new NotFoundException('Class not found')
+
+    const { date: ticketDate } = this.validateTicketDate(
+      activity,
+      dto.ticket_date,
+    )
 
     const validatedItems = this.matchItemsToActivity(activity, dto.items)
     const totalAmount = validatedItems.reduce(
@@ -81,8 +146,10 @@ export class OrdersService {
     })
 
     const totalCount = validatedItems.reduce((s, it) => s + it.count, 0)
-    const ticketNumbers = await this.reserveTicketNumbers(totalCount)
-    const ticketDate = this.todayKey()
+    const ticketNumbers = await this.reserveTicketNumbers(
+      totalCount,
+      ticketDate,
+    )
 
     const bookingDocs: Partial<Booking>[] = []
     let cursor = 0

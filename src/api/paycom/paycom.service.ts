@@ -9,8 +9,14 @@ import {
 import {
   Order,
   OrderStatus,
+  OrderType,
   PaycomTransactionState,
 } from 'src/models/order.schema'
+import {
+  Subscription,
+  SubscriptionStatus,
+} from 'src/models/subscription.schema'
+import { Tariff } from 'src/models/tariff.schema'
 
 import { PAYCOM_ERRORS } from './paycom.errors'
 
@@ -23,7 +29,59 @@ export class PaycomMerchantService {
   constructor(
     @InjectModel(Order.name) private readonly orderModel: Model<Order>,
     @InjectModel(Booking.name) private readonly bookingModel: Model<Booking>,
+    @InjectModel(Subscription.name)
+    private readonly subscriptionModel: Model<Subscription>,
+    @InjectModel(Tariff.name) private readonly tariffModel: Model<Tariff>,
   ) {}
+
+  /**
+   * Side effects after an order flips to PAID. Activity orders confirm
+   * bookings; subscription orders supersede any active subscription and
+   * create a new one that expires at now + tariff.duration_days.
+   */
+  private async onOrderPaid(order: any) {
+    if (order.type === OrderType.SUBSCRIPTION && order.tariff_id) {
+      const tariff = await this.tariffModel.findOne({
+        _id: order.tariff_id,
+      })
+      if (!tariff) {
+        this.logger.warn(
+          `onOrderPaid: subscription order ${order._id} references missing tariff ${order.tariff_id}`,
+        )
+        return
+      }
+      await this.subscriptionModel.updateMany(
+        {
+          parent_id: order.user_id,
+          status: SubscriptionStatus.ACTIVE,
+        },
+        { $set: { status: SubscriptionStatus.EXPIRED } },
+      )
+      const startDate = new Date()
+      const endDate = new Date(
+        startDate.getTime() + tariff.duration_days * 24 * 60 * 60 * 1000,
+      )
+      await this.subscriptionModel.create({
+        parent_id: order.user_id,
+        tariff_id: tariff._id,
+        start_date: startDate,
+        end_date: endDate,
+        status: SubscriptionStatus.ACTIVE,
+        coins: (tariff as any).activities_limit ?? 0,
+        amount: tariff.price,
+        payment_method: 'PAYME',
+      })
+      this.logger.log(
+        `Subscription activated for user=${order.user_id} until=${endDate.toISOString()}`,
+      )
+      return
+    }
+    // Default: activity — confirm all tickets.
+    await this.bookingModel.updateMany(
+      { order_id: order._id },
+      { $set: { status: BookingStatus.CONFIRMED } },
+    )
+  }
 
   private err(error: { code: number; message: any }, data?: any) {
     return { error: { ...error, data } }
@@ -178,10 +236,7 @@ export class PaycomMerchantService {
         },
       },
     )
-    await this.bookingModel.updateMany(
-      { order_id: order._id },
-      { $set: { status: BookingStatus.CONFIRMED } },
-    )
+    await this.onOrderPaid(order)
 
     return {
       result: {

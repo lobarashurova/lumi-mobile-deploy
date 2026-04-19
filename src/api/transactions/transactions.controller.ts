@@ -1,4 +1,4 @@
-import { Body, Controller, Post } from '@nestjs/common'
+import { Body, Controller, Get, Post } from '@nestjs/common'
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger'
 
 import { User } from 'src/common/decarators/user.decarator'
@@ -19,6 +19,12 @@ export class TransactionsController {
     @Body() body: PurchaseSubscriptionDTO,
   ) {
     const data = await this.transactionsService.purchaseSubscription(user, body)
+    return { data }
+  }
+
+  @Get('subscriptions/active')
+  async activeSubscription(@User() user: UserDocument) {
+    const data = await this.transactionsService.getActiveSubscription(user)
     return { data }
   }
 }

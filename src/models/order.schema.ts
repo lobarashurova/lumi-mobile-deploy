@@ -19,6 +19,11 @@ export enum PaycomTransactionState {
   CANCELED_AFTER_COMPLETE = -2,
 }
 
+export enum OrderType {
+  ACTIVITY = 'activity',
+  SUBSCRIPTION = 'subscription',
+}
+
 @Schema({ _id: false })
 export class OrderItem {
   @Prop({ required: true })
@@ -41,10 +46,21 @@ export class Order {
   @Prop({ type: Types.ObjectId, ref: User.name, required: true })
   user_id: Types.ObjectId
 
-  @Prop({ type: Types.ObjectId, ref: Activity.name, required: true })
-  activity_id: Types.ObjectId
+  @Prop({
+    type: String,
+    enum: OrderType,
+    required: true,
+    default: OrderType.ACTIVITY,
+  })
+  type: OrderType
 
-  @Prop({ type: [OrderItemSchema], required: true })
+  @Prop({ type: Types.ObjectId, ref: Activity.name })
+  activity_id?: Types.ObjectId
+
+  @Prop({ type: Types.ObjectId, ref: 'PremiumPlan' })
+  tariff_id?: Types.ObjectId
+
+  @Prop({ type: [OrderItemSchema], default: [] })
   items: OrderItem[]
 
   @Prop({ required: true })

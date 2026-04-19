@@ -7,6 +7,7 @@ import {
   IsInt,
   IsMongoId,
   IsOptional,
+  Matches,
   Min,
   ValidateNested,
 } from 'class-validator'
@@ -39,6 +40,14 @@ export class CheckoutDTO {
   @ValidateNested({ each: true })
   @Type(() => CheckoutItemDTO)
   items: CheckoutItemDTO[]
+
+  @ApiProperty({
+    example: '2026-05-12',
+    description:
+      'YYYY-MM-DD — the date the tickets are valid for. Must match one of the activity.schedule[].day weekdays and be today or in the future.',
+  })
+  @Matches(/^\d{4}-\d{2}-\d{2}$/, { message: 'ticket_date must be YYYY-MM-DD' })
+  ticket_date: string
 
   @ApiProperty({ required: false, description: 'Optional language for Paycom checkout (uz|ru|en)' })
   @IsOptional()
