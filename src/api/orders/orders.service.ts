@@ -33,10 +33,8 @@ export class OrdersService {
     return new Date().toISOString().slice(0, 10)
   }
 
-  private async reserveTicketNumbers(
-    count: number,
-    date: string,
-  ): Promise<string[]> {
+  /** Public helper: reserve a contiguous range of ticket numbers for a date. */
+  async reserveTicketNumbers(count: number, date: string): Promise<string[]> {
     const counter = await this.ticketCounterModel.findOneAndUpdate(
       { date },
       { $inc: { last_no: count } },
@@ -50,6 +48,45 @@ export class OrdersService {
       numbers.push(String(wrapped).padStart(4, '0'))
     }
     return numbers
+  }
+
+  /**
+   * Assigns ticket numbers to every booking of a PAID activity order (in the
+   * same order they were created) and flips them to CONFIRMED. Idempotent:
+   * bookings that already have a ticket_no are skipped.
+   */
+  async assignTicketsForPaidOrder(orderId: Types.ObjectId): Promise<string[]> {
+    const bookings = await this.bookingModel
+      .find({ order_id: orderId })
+      .sort({ _id: 1 })
+    if (bookings.length === 0) return []
+    const missing = bookings.filter((b) => !b.ticket_no)
+    if (missing.length === 0) {
+      // Already assigned; return in order.
+      return bookings.map((b) => b.ticket_no!).filter(Boolean)
+    }
+    const date = missing[0].ticket_date
+    const numbers = await this.reserveTicketNumbers(missing.length, date)
+    for (let i = 0; i < missing.length; i++) {
+      await this.bookingModel.updateOne(
+        { _id: missing[i]._id },
+        {
+          $set: {
+            ticket_no: numbers[i],
+            status: BookingStatus.CONFIRMED,
+          },
+        },
+      )
+    }
+    // Ensure every booking (already-assigned included) is CONFIRMED.
+    await this.bookingModel.updateMany(
+      { order_id: orderId },
+      { $set: { status: BookingStatus.CONFIRMED } },
+    )
+    const all = await this.bookingModel
+      .find({ order_id: orderId })
+      .sort({ _id: 1 })
+    return all.map((b) => b.ticket_no ?? '')
   }
 
   /**
@@ -145,14 +182,9 @@ export class OrdersService {
       status: OrderStatus.PENDING,
     })
 
-    const totalCount = validatedItems.reduce((s, it) => s + it.count, 0)
-    const ticketNumbers = await this.reserveTicketNumbers(
-      totalCount,
-      ticketDate,
-    )
-
+    // Bookings are created in PENDING with no ticket_no — ticket numbers are
+    // only reserved when the order flips to PAID (via webhook or mockPay).
     const bookingDocs: Partial<Booking>[] = []
-    let cursor = 0
     for (const it of validatedItems) {
       for (let i = 0; i < it.count; i++) {
         bookingDocs.push({
@@ -162,7 +194,6 @@ export class OrdersService {
           age_from: it.age_from,
           age_to: it.age_to,
           price: it.unit_price,
-          ticket_no: ticketNumbers[cursor++],
           ticket_date: ticketDate,
           status: BookingStatus.PENDING,
         })
@@ -185,7 +216,7 @@ export class OrdersService {
       status: order.status,
       checkout_url: checkoutUrl,
       ticket_date: ticketDate,
-      ticket_numbers: ticketNumbers,
+      ticket_numbers: [] as string[],
     }
   }
 
@@ -274,14 +305,90 @@ export class OrdersService {
         },
       },
     )
-    await this.bookingModel.updateMany(
-      { order_id: order._id },
-      { $set: { status: BookingStatus.CONFIRMED } },
+    const ticketNumbers = await this.assignTicketsForPaidOrder(
+      order._id as Types.ObjectId,
     )
     return {
       order_id: (order._id as Types.ObjectId).toHexString(),
       status: 'paid',
-      bookings_confirmed: true,
+      ticket_numbers: ticketNumbers,
+    }
+  }
+
+  /**
+   * Dev seeding helper — creates a pre-paid activity order with N confirmed
+   * tickets for the authenticated user. Used by /api/dev/seed-paid-order to
+   * populate demo data so the Calendar tab has something to render.
+   */
+  async seedPaidOrder(
+    userId: string,
+    opts: { activityId?: string; count?: number; ticketDate?: string } = {},
+  ) {
+    const count = Math.max(1, Math.min(opts.count ?? 3, 10))
+    const ticketDate = opts.ticketDate ?? this.todayKey()
+
+    let activity: any
+    if (opts.activityId && Types.ObjectId.isValid(opts.activityId)) {
+      activity = await this.activityModel.findOne({
+        _id: opts.activityId,
+        is_deleted: false,
+        status: 'approved',
+      })
+    }
+    activity ??= await this.activityModel.findOne({
+      is_deleted: false,
+      status: 'approved',
+    })
+    if (!activity) throw new NotFoundException('No activity available to seed')
+
+    const unitPrice: number = activity.price ?? 0
+    const items = [
+      {
+        age_from: activity.age_from,
+        age_to: activity.age_to,
+        unit_price: unitPrice,
+        count,
+      },
+    ]
+    const totalAmount = unitPrice * count
+
+    const now = Date.now()
+    const order = await this.orderModel.create({
+      user_id: new Types.ObjectId(userId),
+      activity_id: activity._id,
+      items,
+      total_amount: totalAmount,
+      paid_amount: totalAmount,
+      status: OrderStatus.PAID,
+      paycom_transaction_id: `seed_${now}`,
+      paycom_create_time: now,
+      paycom_perform_time: now,
+      paycom_state: 2,
+    })
+    const ticketNumbers = await this.reserveTicketNumbers(count, ticketDate)
+    const bookings: Partial<Booking>[] = []
+    for (let i = 0; i < count; i++) {
+      bookings.push({
+        order_id: order._id as any,
+        user_id: new Types.ObjectId(userId),
+        activity_id: activity._id as any,
+        age_from: activity.age_from,
+        age_to: activity.age_to,
+        price: unitPrice,
+        ticket_no: ticketNumbers[i],
+        ticket_date: ticketDate,
+        status: BookingStatus.CONFIRMED,
+      })
+    }
+    await this.bookingModel.insertMany(bookings)
+
+    return {
+      order_id: (order._id as Types.ObjectId).toHexString(),
+      activity_id: (activity._id as Types.ObjectId).toString(),
+      total_amount: totalAmount,
+      ticket_date: ticketDate,
+      ticket_numbers: ticketNumbers,
+      status: 'paid',
     }
   }
 }

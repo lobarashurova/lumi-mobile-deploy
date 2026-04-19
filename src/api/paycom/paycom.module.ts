@@ -1,6 +1,7 @@
-import { Module } from '@nestjs/common'
+import { forwardRef, Module } from '@nestjs/common'
 import { MongooseModule } from '@nestjs/mongoose'
 
+import { OrdersModule } from 'src/api/orders/orders.module'
 import { Booking, BookingSchema } from 'src/models/booking.schema'
 import { Order, OrderSchema } from 'src/models/order.schema'
 import {
@@ -14,6 +15,7 @@ import { PaycomMerchantService } from './paycom.service'
 
 @Module({
   imports: [
+    forwardRef(() => OrdersModule),
     MongooseModule.forFeature([
       { name: Order.name, schema: OrderSchema },
       { name: Booking.name, schema: BookingSchema },

@@ -1,7 +1,8 @@
-import { Injectable, Logger } from '@nestjs/common'
+import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
 import { Model, Types } from 'mongoose'
 
+import { OrdersService } from 'src/api/orders/orders.service'
 import {
   Booking,
   BookingStatus,
@@ -32,6 +33,8 @@ export class PaycomMerchantService {
     @InjectModel(Subscription.name)
     private readonly subscriptionModel: Model<Subscription>,
     @InjectModel(Tariff.name) private readonly tariffModel: Model<Tariff>,
+    @Inject(forwardRef(() => OrdersService))
+    private readonly ordersService: OrdersService,
   ) {}
 
   /**
@@ -76,10 +79,9 @@ export class PaycomMerchantService {
       )
       return
     }
-    // Default: activity — confirm all tickets.
-    await this.bookingModel.updateMany(
-      { order_id: order._id },
-      { $set: { status: BookingStatus.CONFIRMED } },
+    // Default: activity — reserve ticket numbers now + confirm bookings.
+    await this.ordersService.assignTicketsForPaidOrder(
+      order._id as Types.ObjectId,
     )
   }
 

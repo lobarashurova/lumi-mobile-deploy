@@ -33,8 +33,9 @@ export class Booking {
   @Prop({ required: true })
   price: number
 
-  @Prop({ required: true })
-  ticket_no: string
+  /** Assigned only when the order flips to PAID. Null for pending orders. */
+  @Prop()
+  ticket_no?: string
 
   @Prop({ required: true })
   ticket_date: string

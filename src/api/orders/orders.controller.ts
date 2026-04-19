@@ -66,4 +66,31 @@ export class OrdersController {
     )
     return { data }
   }
+
+  /**
+   * Dev-only seed helper: creates a fully-paid activity order with N
+   * confirmed tickets for the authenticated user, so the Calendar tab
+   * has something to render without going through booking + Paycom.
+   * Remove before shipping.
+   */
+  @Post('dev/seed-paid')
+  async seedPaid(
+    @User() user: UserDocument,
+    @Body()
+    body: {
+      activity_id?: string
+      count?: number
+      ticket_date?: string
+    },
+  ) {
+    const data = await this.ordersService.seedPaidOrder(
+      (user._id as any).toString(),
+      {
+        activityId: body?.activity_id,
+        count: body?.count,
+        ticketDate: body?.ticket_date,
+      },
+    )
+    return { data }
+  }
 }
