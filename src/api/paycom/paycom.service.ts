@@ -31,7 +31,7 @@ export class PaycomMerchantService {
 
   private async loadOrder(orderId?: string) {
     if (!orderId) {
-      this.logger.warn('loadOrder: missing order_id in account')
+      this.logger.warn('loadOrder: missing transaction_id in account')
       return null
     }
     if (!Types.ObjectId.isValid(orderId)) {
@@ -48,12 +48,12 @@ export class PaycomMerchantService {
   }
 
   async checkPerformTransaction(params: any) {
-    const orderId: string | undefined = params?.account?.order_id
+    const orderId: string | undefined = params?.account?.transaction_id
     const amount: number | undefined = params?.amount
     const order = await this.loadOrder(orderId)
-    if (!order) return this.err(PAYCOM_ERRORS.ORDER_NOT_FOUND, 'order_id')
+    if (!order) return this.err(PAYCOM_ERRORS.ORDER_NOT_FOUND, 'transaction_id')
     if (order.status === OrderStatus.PAID) {
-      return this.err(PAYCOM_ERRORS.ORDER_UNAVAILABLE, 'order_id')
+      return this.err(PAYCOM_ERRORS.ORDER_UNAVAILABLE, 'transaction_id')
     }
     if (Math.round(order.total_amount * 100) !== amount) {
       return this.err(PAYCOM_ERRORS.INVALID_AMOUNT)
@@ -65,13 +65,13 @@ export class PaycomMerchantService {
     const txId: string = params?.id
     const time: number = params?.time
     const amount: number = params?.amount
-    const orderId: string | undefined = params?.account?.order_id
+    const orderId: string | undefined = params?.account?.transaction_id
     if (!txId || !time || !amount) return this.err(PAYCOM_ERRORS.PARSE)
 
     const order = await this.loadOrder(orderId)
-    if (!order) return this.err(PAYCOM_ERRORS.ORDER_NOT_FOUND, 'order_id')
+    if (!order) return this.err(PAYCOM_ERRORS.ORDER_NOT_FOUND, 'transaction_id')
     if (order.status === OrderStatus.PAID) {
-      return this.err(PAYCOM_ERRORS.ORDER_UNAVAILABLE, 'order_id')
+      return this.err(PAYCOM_ERRORS.ORDER_UNAVAILABLE, 'transaction_id')
     }
     if (Math.round(order.total_amount * 100) !== amount) {
       return this.err(PAYCOM_ERRORS.INVALID_AMOUNT)
@@ -280,7 +280,7 @@ export class PaycomMerchantService {
           id: o.paycom_transaction_id,
           time: o.paycom_create_time,
           amount: Math.round(o.total_amount * 100),
-          account: { order_id: (o._id as Types.ObjectId).toHexString() },
+          account: { transaction_id: (o._id as Types.ObjectId).toHexString() },
           create_time: o.paycom_create_time || 0,
           perform_time: o.paycom_perform_time || 0,
           cancel_time: o.paycom_cancel_time || 0,

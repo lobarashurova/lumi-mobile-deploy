@@ -50,7 +50,7 @@ export class PaycomService {
 
     const segments = [
       `m=${this.merchantId}`,
-      `ac.order_id=${params.orderId}`,
+      `ac.transaction_id=${params.orderId}`,
       `a=${tiyin}`,
       `l=${lang}`,
     ]
