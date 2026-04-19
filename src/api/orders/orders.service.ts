@@ -181,4 +181,40 @@ export class OrdersService {
     const bookings = await this.bookingModel.find({ order_id: order._id })
     return { order, bookings }
   }
+
+  /** Dev helper — see controller comment. */
+  async mockPay(userId: string, orderId: string) {
+    if (!Types.ObjectId.isValid(orderId)) {
+      throw new NotFoundException('Order not found')
+    }
+    const order = await this.orderModel.findOne({
+      _id: orderId,
+      user_id: new Types.ObjectId(userId),
+    })
+    if (!order) throw new NotFoundException('Order not found')
+
+    const now = Date.now()
+    await this.orderModel.updateOne(
+      { _id: order._id },
+      {
+        $set: {
+          status: OrderStatus.PAID,
+          paid_amount: order.total_amount,
+          paycom_transaction_id: `mock_${now}`,
+          paycom_create_time: now,
+          paycom_perform_time: now,
+          paycom_state: 2,
+        },
+      },
+    )
+    await this.bookingModel.updateMany(
+      { order_id: order._id },
+      { $set: { status: BookingStatus.CONFIRMED } },
+    )
+    return {
+      order_id: (order._id as Types.ObjectId).toHexString(),
+      status: 'paid',
+      bookings_confirmed: true,
+    }
+  }
 }
