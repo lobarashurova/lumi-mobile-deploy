@@ -3,6 +3,7 @@ import { Type } from 'class-transformer'
 import {
   ArrayMinSize,
   IsArray,
+  IsBoolean,
   IsInt,
   IsMongoId,
   IsOptional,
@@ -46,4 +47,14 @@ export class CheckoutDTO {
   @ApiProperty({ required: false, description: 'Optional return URL after Paycom checkout' })
   @IsOptional()
   return_url?: string
+
+  @ApiProperty({
+    required: false,
+    description:
+      'If true, generate the sandbox checkout URL (https://test.paycom.uz) so test cards can be used.',
+  })
+  @IsOptional()
+  @IsBoolean()
+  @Type(() => Boolean)
+  test?: boolean
 }

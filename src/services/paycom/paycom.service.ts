@@ -28,6 +28,13 @@ export class PaycomService {
     )
   }
 
+  get testCheckoutUrl(): string {
+    return (
+      this.config.get<string>('paycom.test_checkout_url') ||
+      'https://test.paycom.uz'
+    )
+  }
+
   get redirectUrl(): string {
     return this.config.get<string>('paycom.redirect_url') || ''
   }
@@ -43,6 +50,8 @@ export class PaycomService {
     amountUzs: number
     lang?: 'uz' | 'ru' | 'en'
     returnUrl?: string
+    /** If true, routes to the sandbox domain so Paycom test cards are accepted. */
+    test?: boolean
   }): string {
     const tiyin = Math.round(params.amountUzs * 100)
     const cb = params.returnUrl || this.redirectUrl
@@ -57,7 +66,8 @@ export class PaycomService {
     if (cb) segments.push(`c=${cb}`)
 
     const encoded = Buffer.from(segments.join(';'), 'utf8').toString('base64')
-    return `${this.checkoutUrl}/${encoded}`
+    const base = params.test ? this.testCheckoutUrl : this.checkoutUrl
+    return `${base}/${encoded}`
   }
 
   /**

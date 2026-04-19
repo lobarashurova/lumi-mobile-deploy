@@ -108,6 +108,7 @@ export class OrdersService {
       amountUzs: totalAmount,
       lang: dto.lang,
       returnUrl: dto.return_url,
+      test: dto.test ?? false,
     })
 
     return {

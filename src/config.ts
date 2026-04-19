@@ -21,6 +21,7 @@ export const validation_schema = Joi.object({
   PAYCOM_API_KEY: Joi.string().optional().allow(''),
   PAYCOM_TEST_API_KEY: Joi.string().optional().allow(''),
   PAYCOM_CHECKOUT_URL: Joi.string().optional().allow('').default('https://checkout.paycom.uz'),
+  PAYCOM_TEST_CHECKOUT_URL: Joi.string().optional().allow('').default('https://test.paycom.uz'),
   PAYCOM_CHECKOUT_REDIRECT_URL: Joi.string().optional().allow(''),
 })
 
@@ -48,6 +49,7 @@ export const configuration = () => ({
     api_key: process.env.PAYCOM_API_KEY,
     test_api_key: process.env.PAYCOM_TEST_API_KEY,
     checkout_url: process.env.PAYCOM_CHECKOUT_URL || 'https://checkout.paycom.uz',
+    test_checkout_url: process.env.PAYCOM_TEST_CHECKOUT_URL || 'https://test.paycom.uz',
     redirect_url: process.env.PAYCOM_CHECKOUT_REDIRECT_URL,
   },
 })
