@@ -1,29 +1,15 @@
-import { IsBoolean, IsInt, IsOptional, IsString, Max, Min } from 'class-validator'
+import { IsInt, IsOptional, IsString, Max, Min } from 'class-validator'
 
 /**
- * Superset DTO that tolerates the client's full ChildModel payload.
- * Unknown keys are stripped by the per-handler ValidationPipe, so we don't
- * need to model every trial/flag field the client may send.
+ * Minimal DTO for creating/updating a child profile from the mobile app.
+ * The mobile only collects first name + age; we derive `dob` from age (or
+ * vice versa) on the server. Any other field the client sends is silently
+ * stripped by the global ValidationPipe (whitelist=true).
  */
 export class CreateChildUserDTO {
   @IsOptional()
   @IsString()
   first_name?: string
-
-  @IsOptional()
-  @IsString()
-  last_name?: string
-
-  /** Legacy single-name field — kept for parity with the original Child DTO. */
-  @IsOptional()
-  @IsString()
-  name?: string
-
-  @IsOptional()
-  @IsInt()
-  @Min(0)
-  @Max(25)
-  age?: number
 
   /** ISO date string "yyyy-MM-dd". */
   @IsOptional()
@@ -31,22 +17,8 @@ export class CreateChildUserDTO {
   dob?: string
 
   @IsOptional()
-  @IsString()
-  gender?: string
-
-  @IsOptional()
-  @IsString()
-  city?: string
-
-  @IsOptional()
-  @IsString()
-  district?: string
-
-  @IsOptional()
-  @IsString()
-  avatar?: string
-
-  @IsOptional()
-  @IsBoolean()
-  has_photo?: boolean
+  @IsInt()
+  @Min(0)
+  @Max(25)
+  age?: number
 }

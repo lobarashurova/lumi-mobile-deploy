@@ -83,7 +83,7 @@ export class UsersService {
 
   async createChild(user: UserDocument, dto: CreateChildUserDTO) {
     const payload = this.normalizeChildDto(dto)
-    if (!payload.first_name && !payload.name) {
+    if (!payload.first_name) {
       throw new NotFoundException('Child name is required')
     }
     const created = await this.childModel.create({
@@ -109,16 +109,14 @@ export class UsersService {
     return this.mapChild(updated)
   }
 
-  /** Sync `name`/`first_name` and compute `age` from `dob` when possible. */
+  /** Mirror first_name onto legacy `name` and derive age <-> dob. */
   private normalizeChildDto(
     dto: CreateChildUserDTO | UpdateChildUserDTO,
   ): Record<string, unknown> {
     const out: Record<string, unknown> = { ...dto }
 
     const firstName = dto.first_name?.trim()
-    const legacyName = dto.name?.trim()
-    if (firstName && !legacyName) out.name = firstName
-    if (!firstName && legacyName) out.first_name = legacyName
+    if (firstName) out.name = firstName
 
     if (dto.dob && dto.age == null) {
       const computed = this.ageFromDob(dto.dob)

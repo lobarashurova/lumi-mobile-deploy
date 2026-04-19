@@ -41,7 +41,9 @@ async function bootstrap() {
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
-      forbidNonWhitelisted: true,
+      // Mobile clients post freezed DTOs with many extra fields (trial flags,
+      // timestamps, etc). We strip unknown props instead of 400ing.
+      forbidNonWhitelisted: false,
       transform: true,
     }),
   )
