@@ -308,10 +308,22 @@ export class OrdersService implements OnModuleInit {
     }
     const order = await this.orderModel
       .findOne({ _id: orderId, user_id: new Types.ObjectId(userId) })
-      .populate('activity_id', 'name image price images age_price_ranges')
+      .populate(
+        'activity_id',
+        'name image price images age_price_ranges branch_id schedule',
+      )
     if (!order) throw new NotFoundException('Order not found')
     const bookings = await this.bookingModel.find({ order_id: order._id })
-    return { order, bookings }
+    // For still-PENDING orders the client needs a live Paycom URL to resume
+    // the payment flow from the booking detail screen.
+    let checkoutUrl: string | undefined
+    if (order.status === OrderStatus.PENDING) {
+      checkoutUrl = this.paycom.buildCheckoutUrl({
+        orderId: (order._id as Types.ObjectId).toHexString(),
+        amountUzs: order.total_amount,
+      })
+    }
+    return { order, bookings, checkout_url: checkoutUrl }
   }
 
   /** Dev helper — see controller comment. */

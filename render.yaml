@@ -31,8 +31,13 @@ services:
         sync: false
       - key: SMS_PASSWORD
         sync: false
+      # SMS_FROM must be an Eskiz-approved sender nickname for the account.
+      # "4546" is Eskiz's test nickname and only works with the literal test
+      # template "This is test from Eskiz" — it will NOT deliver our bilingual
+      # OTP template. Set the same branded nickname (e.g. LUMIPASS) that the
+      # notification-service uses for prod.
       - key: SMS_FROM
-        value: "4546"
+        sync: false
       - key: SMS_CALLBACK_URL
         sync: false
       - key: PAYCOM_USERNAME_ID

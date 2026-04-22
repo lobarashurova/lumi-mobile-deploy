@@ -13,6 +13,11 @@ export enum BookingStatus {
   CANCELED = 'canceled',
 }
 
+export enum AttendanceStatus {
+  ATTENDED = 'attended',
+  NOT_ATTENDED = 'not_attended',
+}
+
 @Schema({ timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } })
 export class Booking {
   @Prop({ type: Types.ObjectId, ref: Order.name, required: true })
@@ -42,6 +47,15 @@ export class Booking {
 
   @Prop({ required: true, enum: BookingStatus, default: BookingStatus.PENDING })
   status: BookingStatus
+
+  @Prop({ enum: AttendanceStatus })
+  attendance_status?: AttendanceStatus
+
+  @Prop()
+  attended_at?: Date
+
+  @Prop({ type: Types.ObjectId })
+  attended_by?: Types.ObjectId
 }
 
 export const BookingSchema = SchemaFactory.createForClass(Booking)

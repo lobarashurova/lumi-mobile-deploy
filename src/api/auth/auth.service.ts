@@ -48,7 +48,8 @@ export class AuthService {
     try {
       await this.smsService.sendMessage(dto.phone, message)
     } catch (error) {
-      this.logger.error(`Failed to send SMS to ${dto.phone}`, error as Error)
+      const msg = error instanceof Error ? error.message : String(error)
+      this.logger.error(`Failed to send SMS to ${dto.phone}: ${msg}`)
     }
 
     return { message: 'OTP sent successfully', expires_in: 180, code }

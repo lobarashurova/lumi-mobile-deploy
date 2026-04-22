@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common'
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 
 interface EskizTokenResponse {
@@ -12,11 +12,29 @@ interface EskizSendResponse {
 }
 
 @Injectable()
-export class SmsService {
+export class SmsService implements OnModuleInit {
   private readonly logger = new Logger(SmsService.name)
   private token: string | null = null
 
   constructor(private readonly configService: ConfigService) {}
+
+  onModuleInit(): void {
+    const email = this.configService.get<string>('sms.email')
+    const password = this.configService.get<string>('sms.password')
+    const from = this.configService.get<string>('sms.from')
+    if (!email || !password) {
+      this.logger.error(
+        'SMS DISABLED: SMS_EMAIL and/or SMS_PASSWORD are empty. OTPs will NOT be sent. Set these in the Render dashboard.',
+      )
+      return
+    }
+    if (!from || from === '4546') {
+      this.logger.warn(
+        `SMS_FROM="${from ?? ''}" looks like Eskiz's test nickname. Custom OTP template will be rejected by Eskiz. Set SMS_FROM to your approved branded sender.`,
+      )
+    }
+    this.logger.log(`SMS configured (email=${email}, from=${from})`)
+  }
 
   async sendMessage(phone: string, message: string): Promise<void> {
     const base_url = this.configService.get<string>('sms.url')
@@ -26,8 +44,8 @@ export class SmsService {
     const callback_url = this.configService.get<string>('sms.callback_url')
 
     if (!base_url || !email || !password) {
-      this.logger.warn(
-        `SMS not configured; would send to ${phone}: ${message}`,
+      this.logger.error(
+        `SMS not configured (SMS_EMAIL/SMS_PASSWORD missing); OTP to ${phone} NOT sent. Code=${message}`,
       )
       return
     }
@@ -42,45 +60,47 @@ export class SmsService {
     }
     if (callback_url) body.callback_url = callback_url
 
-    const res = await fetch(`${this.trim(base_url)}/api/message/sms/send`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(body),
-    })
+    const send = async (auth_token: string) =>
+      fetch(`${this.trim(base_url)}/api/message/sms/send`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${auth_token}`,
+        },
+        body: JSON.stringify(body),
+      })
+
+    let res = await send(token)
 
     if (res.status === 401) {
       this.token = null
       const retry_token = await this.getToken()
-      const retry = await fetch(
-        `${this.trim(base_url)}/api/message/sms/send`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${retry_token}`,
-          },
-          body: JSON.stringify(body),
-        },
-      )
-      if (!retry.ok) {
-        const text = await retry.text()
-        throw new Error(
-          `Eskiz send failed after refresh: ${retry.status} ${text}`,
-        )
-      }
-      return
+      res = await send(retry_token)
     }
 
+    const raw = await res.text()
     if (!res.ok) {
-      const text = await res.text()
-      throw new Error(`Eskiz send failed: ${res.status} ${text}`)
+      throw new Error(`Eskiz send failed: ${res.status} ${raw}`)
     }
 
-    const data = (await res.json()) as EskizSendResponse
-    this.logger.log(`SMS sent to ${phone} (eskiz id=${data.id})`)
+    let data: EskizSendResponse
+    try {
+      data = JSON.parse(raw) as EskizSendResponse
+    } catch {
+      throw new Error(`Eskiz send returned non-JSON (status ${res.status}): ${raw}`)
+    }
+
+    // Eskiz returns HTTP 200 even when it rejects (e.g. unapproved template,
+    // zero balance, bad sender). Detect that here so the caller sees a real error.
+    if (data.status === 'error' || !data.id) {
+      throw new Error(
+        `Eskiz rejected SMS (from=${body.from}): status=${data.status ?? 'unknown'} message=${data.message ?? raw}`,
+      )
+    }
+
+    this.logger.log(
+      `SMS sent to ${phone} (eskiz id=${data.id}, from=${body.from})`,
+    )
   }
 
   private async getToken(): Promise<string> {
