@@ -9,6 +9,7 @@ import { InjectModel } from '@nestjs/mongoose'
 import { Model, Types } from 'mongoose'
 
 import { Public } from 'src/common/decarators/public.decarator'
+import { Child } from 'src/models/child.schema'
 import { Order } from 'src/models/order.schema'
 import { User } from 'src/models/user.schema'
 
@@ -23,6 +24,7 @@ export class AdminController {
   constructor(
     @InjectModel(Order.name) private readonly orderModel: Model<Order>,
     @InjectModel(User.name) private readonly userModel: Model<User>,
+    @InjectModel(Child.name) private readonly childModel: Model<Child>,
   ) {}
 
   @Get('orders')
@@ -80,20 +82,38 @@ export class AdminController {
     const l = Math.min(100, Math.max(1, parseInt(limit, 10) || 20))
     const skip = (p - 1) * l
 
-    const matchStage: Record<string, any> = { is_deleted: { $ne: true } }
+    const matchStage: Record<string, any> = {
+      is_deleted: { $ne: true },
+      role: 'user',
+    }
     if (search) {
       const regex = new RegExp(search, 'i')
       matchStage.$or = [
         { phone: regex },
         { first_name: regex },
         { last_name: regex },
-        { city: regex },
       ]
     }
 
     const pipeline: any[] = [
       { $match: matchStage },
       { $sort: { created_at: -1 } },
+      {
+        $lookup: {
+          from: 'children',
+          let: { userId: '$_id' },
+          pipeline: [
+            {
+              $match: {
+                $expr: { $eq: ['$parent_id', '$$userId'] },
+                is_deleted: { $ne: true },
+              },
+            },
+            { $project: { first_name: 1, last_name: 1, name: 1, age: 1, dob: 1 } },
+          ],
+          as: 'children',
+        },
+      },
       {
         $lookup: {
           from: 'orders',
@@ -116,7 +136,7 @@ export class AdminController {
           is_premium: { $gt: [{ $size: '$paid_subscriptions' }, 0] },
         },
       },
-      { $project: { paid_subscriptions: 0 } },
+      { $project: { paid_subscriptions: 0, password: 0 } },
     ]
 
     const [data, total] = await Promise.all([
