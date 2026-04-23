@@ -13,6 +13,7 @@ import { AuthGuard } from 'src/api/auth/auth.guard'
 import { AuthModule } from 'src/api/auth/auth.module'
 import { RolesGuard } from 'src/api/auth/role.guard'
 
+import { AdminModule } from './api/admin/admin.module'
 import { BannersModule } from './api/banners/banners.module'
 import { BranchesModule } from './api/branches/branches.module'
 import { CategoriesModule } from './api/categories/categories.module'
@@ -65,6 +66,7 @@ import { SharedModule } from './shared/shared.module'
     SmsModule,
     PaycomModule,
     SharedModule,
+    AdminModule,
     AdminSeedModule,
     BannersModule,
     BranchesModule,

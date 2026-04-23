@@ -23,6 +23,7 @@ export const validation_schema = Joi.object({
   PAYCOM_CHECKOUT_URL: Joi.string().optional().allow('').default('https://checkout.paycom.uz'),
   PAYCOM_TEST_CHECKOUT_URL: Joi.string().optional().allow('').default('https://test.paycom.uz'),
   PAYCOM_CHECKOUT_REDIRECT_URL: Joi.string().optional().allow(''),
+  ADMIN_API_KEY: Joi.string().optional().allow(''),
 })
 
 export const configuration = () => ({
@@ -35,6 +36,7 @@ export const configuration = () => ({
     name: process.env.DATABASE_NAME,
   },
   jwt_secret: process.env.JWT_SECRET,
+  admin_api_key: process.env.ADMIN_API_KEY,
   docs_password: process.env.DOCS_PASSWORD,
   sms: {
     url: process.env.SMS_URL,
