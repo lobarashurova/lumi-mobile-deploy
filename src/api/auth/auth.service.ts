@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Injectable,
   Logger,
+  OnModuleInit,
 } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { JwtService } from '@nestjs/jwt'
@@ -17,7 +18,7 @@ import { SendOtpDTO } from './dto/send-otp.dto'
 import { VerifyOtpDTO } from './dto/verify-otp.dto'
 
 @Injectable()
-export class AuthService {
+export class AuthService implements OnModuleInit {
   private readonly logger = new Logger(AuthService.name)
 
   constructor(
@@ -27,6 +28,27 @@ export class AuthService {
     private readonly configService: ConfigService,
     private readonly smsService: SmsService,
   ) {}
+
+  /**
+   * The shared `lumi_adminka.users` collection still carries a legacy
+   * `login_1` unique index from the admin panel schema. Mobile-created users
+   * have no `login` field, so a second insert collides on `{ login: null }`.
+   * Drop that index on boot; the mobile schema's own indexes stay in place.
+   */
+  async onModuleInit() {
+    try {
+      const indexes = await this.userModel.collection.indexes()
+      const legacy = indexes.find((i) => i.name === 'login_1')
+      if (legacy) {
+        await this.userModel.collection.dropIndex('login_1')
+        this.logger.log('Dropped legacy login_1 unique index on users')
+      }
+    } catch (err) {
+      this.logger.warn(
+        `User index reconciliation failed: ${(err as Error).message}`,
+      )
+    }
+  }
 
   async sendOtp(dto: SendOtpDTO) {
     const code = Math.floor(1000 + Math.random() * 9000).toString()
