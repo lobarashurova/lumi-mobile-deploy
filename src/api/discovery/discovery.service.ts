@@ -80,15 +80,16 @@ function mapClass(doc: any, lang: Lang) {
   const image =
     doc.image || (Array.isArray(doc.images) ? doc.images[0] : undefined)
 
-  const summary = Array.isArray(doc.prices_summary)
-    ? doc.prices_summary
-    : doc.has_age_pricing && Array.isArray(doc.age_price_ranges)
-      ? doc.age_price_ranges
-      : [{ age_from: doc.age_from, age_to: doc.age_to, price: doc.price }]
-  const sortedSummary = [...summary].sort((a, b) => (a.price ?? 0) - (b.price ?? 0))
-  const priceMin = doc.price_min ?? sortedSummary[0]?.price ?? doc.price ?? 0
-  const priceMax = doc.price_max ?? sortedSummary[sortedSummary.length - 1]?.price ?? doc.price ?? 0
-  const hasMultiple = doc.has_multiple_prices ?? sortedSummary.length > 1
+  // prices_summary is already enriched by ClassesService; filter out empty objects
+  const validSummary = Array.isArray(doc.prices_summary)
+    ? doc.prices_summary.filter((s: any) => s && typeof s.price === 'number')
+    : []
+  const sortedSummary = [...validSummary].sort((a, b) => (a.price ?? 0) - (b.price ?? 0))
+
+  // Use enriched price_min / price_max when available; fall back to summary extremes
+  const priceMin: number = doc.price_min ?? sortedSummary[0]?.price ?? doc.price ?? 0
+  const priceMax: number = doc.price_max ?? sortedSummary[sortedSummary.length - 1]?.price ?? doc.price ?? 0
+  const hasMultiple: boolean = doc.has_multiple_prices ?? sortedSummary.length > 1
 
   return {
     id: String(doc._id),
@@ -96,11 +97,12 @@ function mapClass(doc: any, lang: Lang) {
     category,
     title: tr(doc.name, lang),
     description: tr(doc.description, lang),
-    price: doc.price ?? 0,
+    price: priceMin || doc.price || 0,
     price_min: priceMin,
     price_max: priceMax,
     has_multiple_prices: hasMultiple,
     prices_summary: sortedSummary,
+    schedule_count: doc.schedule_count ?? 0,
     min_age: doc.age_from,
     max_age: doc.age_to,
     gender: doc.gender,

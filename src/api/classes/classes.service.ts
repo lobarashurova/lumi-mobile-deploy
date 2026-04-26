@@ -80,12 +80,33 @@ export class ClassesService {
       ? sorted[sorted.length - 1].price
       : json.price ?? 0
     json.has_multiple_prices = sorted.length > 1
+    json.schedule_count = Array.isArray(json.schedule) ? json.schedule.length : 0
     json.video_url = this.normalizeVideoUrl(json)
     json.video_provider = this.detectVideoProvider(json)
     return json
   }
 
   private collectRanges(activity: any): PriceRange[] {
+    // New format: age_tiers with nested durations [{age_from, age_to, durations:[{duration,price}]}]
+    if (Array.isArray(activity.age_tiers) && activity.age_tiers.length > 0) {
+      const ranges: PriceRange[] = []
+      for (const tier of activity.age_tiers) {
+        if (Array.isArray(tier.durations)) {
+          for (const dur of tier.durations) {
+            if (typeof dur.price === 'number') {
+              ranges.push({
+                age_from: tier.age_from ?? 0,
+                age_to: tier.age_to ?? 99,
+                price: dur.price,
+              })
+            }
+          }
+        }
+      }
+      if (ranges.length > 0) return ranges
+    }
+
+    // Legacy format: age_price_ranges
     if (
       activity.has_age_pricing &&
       Array.isArray(activity.age_price_ranges) &&
@@ -97,11 +118,13 @@ export class ClassesService {
         price: r.price,
       }))
     }
+
+    // Flat single price
     return [
       {
-        age_from: activity.age_from,
-        age_to: activity.age_to,
-        price: activity.price,
+        age_from: activity.age_from ?? 0,
+        age_to: activity.age_to ?? 99,
+        price: activity.price ?? 0,
       },
     ]
   }
